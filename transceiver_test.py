@@ -138,14 +138,14 @@ class TransceiverTest(Module):
 
                 # TX Initialization and Reset Ports
                 i_CFGRESET=0,
-                #i_GTTXRESET=gttxreset,
+                i_GTTXRESET=platform.request("user_btn_c"),
                 #o_PCSRSVDOUT=,
-                #i_TXUSERRDY=txuserrdy,
+                i_TXUSERRDY=1,
 
                 # TX data
-                i_TXCHARDISPMODE=0,
-                i_TXCHARDISPVAL=0,
-                i_TXDATA=0,
+                i_TXCHARDISPMODE=1,
+                i_TXCHARDISPVAL=1,
+                i_TXDATA=0xff,
                 i_TXUSRCLK=ClockSignal("tx"),
                 i_TXUSRCLK2=ClockSignal("tx"),
 
