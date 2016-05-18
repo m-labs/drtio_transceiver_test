@@ -26,6 +26,7 @@ class TransceiverTest(Module):
 
         txoutclk = Signal()
         tx_pads = platform.request("user_sma_mgt_tx")
+        rx_pads = platform.request("user_sma_mgt_rx")
         gtxe2_channel_parameters = {
             # PMA Attributes
             "p_OUTREFCLK_SEL_INV": 0b11,
@@ -85,10 +86,6 @@ class TransceiverTest(Module):
             "p_TX_MARGIN_LOW_3": 0b1000000,
             "p_TX_MARGIN_LOW_4": 0b1000000,
 
-            # TX Initialization and Reset Attributes
-            "p_TXPCSRESET_TIME": 1,
-            "p_TXPMARESET_TIME": 1,
-
             # CPLL Attributes
             "p_CPLL_CFG": 0xBC07DC,
             "p_CPLL_FBDIV": 4,
@@ -106,87 +103,44 @@ class TransceiverTest(Module):
 
         self.specials += \
             Instance("GTXE2_CHANNEL",
-                # CPLL Ports
+                # CPLL
                 o_CPLLLOCK=platform.request("user_led"),
-                i_CPLLLOCKDETCLK=0,
                 i_CPLLLOCKEN=1,
-                #i_CPLLPD=self.cpllpd,
                 i_CPLLREFCLKSEL=0b001,
-                #i_CPLLRESET=self.cpllreset,
-                i_GTRSVD=0,
-                i_PCSRSVDIN=0,
-                i_PCSRSVDIN2=0,
-                i_PMARSVDIN=0,
-                i_PMARSVDIN2=0,
                 i_TSTIN=2**20-1,
-
-                # Channel - Clocking Ports
-                i_GTGREFCLK=0,
-                i_GTNORTHREFCLK0=0,
-                i_GTNORTHREFCLK1=0,
                 i_GTREFCLK0=refclk,
-                i_GTREFCLK1=0,
-                i_GTSOUTHREFCLK0=0,
-                i_GTSOUTHREFCLK1=0,
 
-                # Clocking Ports
-                i_RXSYSCLKSEL=0b00,
+                # TX clock
+                o_TXOUTCLK=txoutclk,
                 i_TXSYSCLKSEL=0b00,
+                i_TXOUTCLKSEL=0b11,
 
-                # disable RX
-                i_RXPD=0b11,
+                # RX clock
+                i_RXSYSCLKSEL=0b00,
 
-                # TX Initialization and Reset Ports
-                i_CFGRESET=0,
+                # Startup/Reset
                 i_GTTXRESET=platform.request("user_btn_c"),
-                #o_PCSRSVDOUT=,
-                i_TXUSERRDY=1,
+                #i_TXDLYSRESET=txdlyreset,
+                #o_TXDLYSRESETDONE=txdlyresetdone,
+                #o_TXPHALIGNDONE=txphaligndone,
 
                 # TX data
+                i_TXUSERRDY=1,
                 i_TXCHARDISPMODE=1,
                 i_TXCHARDISPVAL=1,
                 i_TXDATA=0xff,
                 i_TXUSRCLK=ClockSignal("tx"),
                 i_TXUSRCLK2=ClockSignal("tx"),
 
-                # Transmit Ports - TX Buffer Bypass Ports
-                i_TXDLYBYPASS=0,
-                i_TXDLYEN=0,
-                i_TXDLYHOLD=0,
-                i_TXDLYOVRDEN=0,
-                #i_TXDLYSRESET=txdlyreset,
-                #o_TXDLYSRESETDONE=txdlyresetdone,
-                i_TXDLYUPDOWN=0,
-                i_TXPHALIGN=0,
-                #o_TXPHALIGNDONE=txphaligndone,
-                i_TXPHALIGNEN=0,
-                i_TXPHDLYPD=0,
-                i_TXPHDLYRESET=0,
-                i_TXPHINIT=0,
-                #o_TXPHINITDONE=,
-                i_TXPHOVRDEN=0,
-
-                # Transmit Ports - TX Configurable Driver Ports
+                # TX electrical
                 i_TXBUFDIFFCTRL=0b100,
-                i_TXDEEMPH=0,
                 i_TXDIFFCTRL=0b1000,
-                i_TXDIFFPD=0,
-                i_TXINHIBIT=0,
-                i_TXMAINCURSOR=0,
-                i_TXPISOPD=0,
 
-                # Transmit Ports - TX Driver and OOB signaling
+                # Pads
                 o_GTXTXP=tx_pads.p,
                 o_GTXTXN=tx_pads.n,
-
-                # Transmit Ports - TX Fabric Clock Output Control Ports
-                o_TXOUTCLK=txoutclk,
-                i_TXOUTCLKSEL=0b11,
-
-                # Transmit Ports - TX Initialization and Reset Ports
-                i_TXPCSRESET=0,
-                i_TXPMARESET=0,
-                #o_TXRESETDONE=txresetdone,
+                i_GTXRXP=rx_pads.p,
+                i_GTXRXN=rx_pads.n,
 
                 **gtxe2_channel_parameters
             )
@@ -199,7 +153,6 @@ class TransceiverTest(Module):
         counter = Signal(26)
         self.sync.tx += counter.eq(counter + 1)
         self.comb += led.eq(counter[25])
-
 
 
 if __name__ == "__main__":
