@@ -29,23 +29,15 @@ class TransceiverTest(Module):
         rx_pads = platform.request("user_sma_mgt_rx")
         gtxe2_channel_parameters = {
             # PMA Attributes
-            "p_OUTREFCLK_SEL_INV": 0b11,
             "p_PMA_RSV": 0x00018480,
             "p_PMA_RSV2": 0x2050,
             "p_PMA_RSV3": 0,
             "p_PMA_RSV4": 0,
             "p_RX_BIAS_CFG": 0b100,
-            "p_DMONITOR_CFG": 0xA00,
-            "p_RX_CM_SEL": 0b11,
             "p_RX_CM_TRIM": 0b010,
-            "p_RX_DEBUG_CFG": 0,
             "p_RX_OS_CFG": 0b10000000,
-            "p_TERM_RCAL_CFG": 0b10000,
-            "p_TERM_RCAL_OVRD": 0,
-            "p_TST_RSV": 0,
-            "p_RX_CLK25_DIV": 6,
-            "p_TX_CLK25_DIV": 6,
-            "p_UCODEER_CLR": 0,
+            "p_RX_CLK25_DIV": 5,
+            "p_TX_CLK25_DIV": 5,
 
             # Power-Down Attributes
             "p_PD_TRANS_TIME_FROM_P2": 0x3c,
@@ -54,51 +46,19 @@ class TransceiverTest(Module):
 
             # TX Buffer Attributes
             "p_TXBUF_EN": "FALSE",
-            "p_TXBUF_RESET_ON_RATE_CHANGE": "FALSE",
-            "p_TXDLY_CFG": 0x1f,
-            "p_TXDLY_LCFG": 0x030,
-            "p_TXDLY_TAP_CFG": 0,
-            "p_TXPH_CFG": 0x0780,
-            "p_TXPHDLY_CFG": 0x084020,
-            "p_TXPH_MONITOR_SEL": 0,
             "p_TX_XCLK_SEL": "TXUSR",
 
             # FPGA TX Interface Attributes
             "p_TX_DATA_WIDTH": 20,
             "p_TX_INT_DATAWIDTH": 0,
 
-            # TX Configurable Driver Attributes
-            "p_TX_DEEMPH0": 0,
-            "p_TX_DEEMPH1": 0,
-            "p_TX_EIDLE_ASSERT_DELAY": 0b110,
-            "p_TX_EIDLE_DEASSERT_DELAY": 0b100,
-            "p_TX_LOOPBACK_DRIVE_HIZ": "FALSE",
-            "p_TX_MAINCURSOR_SEL": 0,
-            "p_TX_DRIVE_MODE": "DIRECT",
-            "p_TX_MARGIN_FULL_0": 0b1001110,
-            "p_TX_MARGIN_FULL_1": 0b1001001,
-            "p_TX_MARGIN_FULL_2": 0b1000101,
-            "p_TX_MARGIN_FULL_3": 0b1000010,
-            "p_TX_MARGIN_FULL_4": 0b1000000,
-            "p_TX_MARGIN_LOW_0": 0b1000110,
-            "p_TX_MARGIN_LOW_1": 0b1000100,
-            "p_TX_MARGIN_LOW_2": 0b1000010,
-            "p_TX_MARGIN_LOW_3": 0b1000000,
-            "p_TX_MARGIN_LOW_4": 0b1000000,
-
             # CPLL Attributes
             "p_CPLL_CFG": 0xBC07DC,
             "p_CPLL_FBDIV": 4,
             "p_CPLL_FBDIV_45": 5,
-            "p_CPLL_INIT_CFG": 0x00001e,
-            "p_CPLL_LOCK_CFG": 0x01e8,
             "p_CPLL_REFCLK_DIV": 1,
             "p_RXOUT_DIV": 4,
             "p_TXOUT_DIV": 4,
-
-            # Power-Down Attributes
-            "p_RX_CLKMUX_PD": 1,
-            "p_TX_CLKMUX_PD": 1,
         }
 
         self.specials += \
