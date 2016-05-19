@@ -27,43 +27,31 @@ class TransceiverTest(Module):
         txoutclk = Signal()
         tx_pads = platform.request("user_sma_mgt_tx")
         rx_pads = platform.request("user_sma_mgt_rx")
-        gtxe2_channel_parameters = {
-            # PMA Attributes
-            "p_PMA_RSV": 0x00018480,
-            "p_PMA_RSV2": 0x2050,
-            "p_PMA_RSV3": 0,
-            "p_PMA_RSV4": 0,
-            "p_RX_BIAS_CFG": 0b100,
-            "p_RX_CM_TRIM": 0b010,
-            "p_RX_OS_CFG": 0b10000000,
-            "p_RX_CLK25_DIV": 5,
-            "p_TX_CLK25_DIV": 5,
-
-            # Power-Down Attributes
-            "p_PD_TRANS_TIME_FROM_P2": 0x3c,
-            "p_PD_TRANS_TIME_NONE_P2": 0x3c,
-            "p_PD_TRANS_TIME_TO_P2": 0x64,
-
-            # TX Buffer Attributes
-            "p_TXBUF_EN": "FALSE",
-            "p_TX_XCLK_SEL": "TXUSR",
-
-            # FPGA TX Interface Attributes
-            "p_TX_DATA_WIDTH": 20,
-            "p_TX_INT_DATAWIDTH": 0,
-
-            # CPLL Attributes
-            "p_CPLL_CFG": 0xBC07DC,
-            "p_CPLL_FBDIV": 4,
-            "p_CPLL_FBDIV_45": 5,
-            "p_CPLL_REFCLK_DIV": 1,
-            "p_RXOUT_DIV": 4,
-            "p_TXOUT_DIV": 4,
-        }
-
         self.specials += \
             Instance("GTXE2_CHANNEL",
+                # PMA Attributes
+                p_PMA_RSV=0x00018480,
+                p_PMA_RSV2=0x2050,
+                p_PMA_RSV3=0,
+                p_PMA_RSV4=0,
+                p_RX_BIAS_CFG=0b100,
+                p_RX_CM_TRIM=0b010,
+                p_RX_OS_CFG=0b10000000,
+                p_RX_CLK25_DIV=5,
+                p_TX_CLK25_DIV=5,
+
+                # Power-Down Attributes
+                p_PD_TRANS_TIME_FROM_P2=0x3c,
+                p_PD_TRANS_TIME_NONE_P2=0x3c,
+                p_PD_TRANS_TIME_TO_P2=0x64,
+
                 # CPLL
+                p_CPLL_CFG=0xBC07DC,
+                p_CPLL_FBDIV=4,
+                p_CPLL_FBDIV_45=5,
+                p_CPLL_REFCLK_DIV=1,
+                p_RXOUT_DIV=4,
+                p_TXOUT_DIV=4,
                 o_CPLLLOCK=platform.request("user_led"),
                 i_CPLLLOCKEN=1,
                 i_CPLLREFCLKSEL=0b001,
@@ -71,6 +59,8 @@ class TransceiverTest(Module):
                 i_GTREFCLK0=refclk,
 
                 # TX clock
+                p_TXBUF_EN="FALSE",
+                p_TX_XCLK_SEL="TXUSR",
                 o_TXOUTCLK=txoutclk,
                 i_TXSYSCLKSEL=0b00,
                 i_TXOUTCLKSEL=0b11,
@@ -85,6 +75,8 @@ class TransceiverTest(Module):
                 #o_TXPHALIGNDONE=txphaligndone,
 
                 # TX data
+                p_TX_DATA_WIDTH=20,
+                p_TX_INT_DATAWIDTH=0,
                 i_TXUSERRDY=1,
                 i_TXCHARDISPMODE=1,
                 i_TXCHARDISPVAL=1,
@@ -101,8 +93,6 @@ class TransceiverTest(Module):
                 o_GTXTXN=tx_pads.n,
                 i_GTXRXP=rx_pads.p,
                 i_GTXRXN=rx_pads.n,
-
-                **gtxe2_channel_parameters
             )
 
         self.clock_domains.cd_tx = ClockDomain()
