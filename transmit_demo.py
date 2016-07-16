@@ -2,7 +2,7 @@ from migen import *
 from migen.build.platforms import kc705
 
 
-class TransceiverTest(Module):
+class TransmitDemo(Module):
     def __init__(self, platform):
         sys_clock_pads = platform.request("clk156")
         self.clock_domains.cd_sys = ClockDomain(reset_less=True)
@@ -25,8 +25,7 @@ class TransceiverTest(Module):
         )
 
         txoutclk = Signal()
-        tx_pads = platform.request("user_sma_mgt_tx")
-        rx_pads = platform.request("user_sma_mgt_rx")
+        tx_pads = platform.request("sfp_tx")
         self.specials += \
             Instance("GTXE2_CHANNEL",
                 # PMA Attributes
@@ -65,8 +64,8 @@ class TransceiverTest(Module):
                 i_TXSYSCLKSEL=0b00,
                 i_TXOUTCLKSEL=0b11,
 
-                # RX clock
-                i_RXSYSCLKSEL=0b00,
+                # disable RX
+                i_RXPD=0b11,
 
                 # Startup/Reset
                 i_GTTXRESET=platform.request("user_btn_c"),
@@ -91,8 +90,6 @@ class TransceiverTest(Module):
                 # Pads
                 o_GTXTXP=tx_pads.p,
                 o_GTXTXN=tx_pads.n,
-                i_GTXRXP=rx_pads.p,
-                i_GTXRXN=rx_pads.n,
             )
 
         self.clock_domains.cd_tx = ClockDomain()
@@ -107,5 +104,5 @@ class TransceiverTest(Module):
 
 if __name__ == "__main__":
     platform = kc705.Platform()
-    top = TransceiverTest(platform)
-    platform.build(top)
+    top = TransmitDemo(platform)
+    platform.build(top, build_dir="transmit_demo")
