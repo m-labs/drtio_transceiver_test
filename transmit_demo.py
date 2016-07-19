@@ -56,7 +56,7 @@ class TransmitDemo(Module):
                 p_CPLL_REFCLK_DIV=1,
                 p_RXOUT_DIV=2,
                 p_TXOUT_DIV=2,
-                o_CPLLLOCK=platform.request("user_led"),
+                #o_CPLLLOCK=platform.request("user_led"),
                 i_CPLLLOCKEN=1,
                 i_CPLLREFCLKSEL=0b001,
                 i_TSTIN=2**20-1,

@@ -67,7 +67,7 @@ class ReceiveDemo(Module):
                 p_CPLL_REFCLK_DIV=1,
                 p_RXOUT_DIV=2,
                 p_TXOUT_DIV=2,
-                o_CPLLLOCK=platform.request("user_led"),
+                #o_CPLLLOCK=platform.request("user_led"),
                 i_CPLLLOCKEN=1,
                 i_CPLLREFCLKSEL=0b001,
                 i_TSTIN=2**20-1,
@@ -75,10 +75,10 @@ class ReceiveDemo(Module):
 
                 # Startup/Reset
                 i_GTRXRESET=platform.request("user_btn_c"),
-                #o_RXRESETDONE=,
+                o_RXRESETDONE=platform.request("user_led"),
                 i_RXDLYSRESET=rxdlyreset,
                 #o_RXDLYSRESETDONE=,
-                #o_RXPHALIGNDONE=,
+                o_RXPHALIGNDONE=platform.request("user_led"),
 
                 # RX AFE
                 p_RX_DFE_XYD_CFG=0,
