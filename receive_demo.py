@@ -103,8 +103,8 @@ class ReceiveDemo(Module):
                 i_TXPD=0b11,
 
                 # Pads
-                o_GTXRXP=rx_pads.p,
-                o_GTXRXN=rx_pads.n,
+                i_GTXRXP=rx_pads.p,
+                i_GTXRXN=rx_pads.n,
             )
 
         self.clock_domains.cd_rx = ClockDomain()
