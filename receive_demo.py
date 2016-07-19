@@ -42,6 +42,7 @@ class ReceiveDemo(Module):
         rxoutclk = Signal()
         rxdata = Signal(64)
         rx_pads = platform.request("sfp_rx")
+        self.comb += platform.request("sfp_tx_disable_n").eq(1)
         self.specials += \
             Instance("GTXE2_CHANNEL",
                 # PMA Attributes
