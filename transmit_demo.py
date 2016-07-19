@@ -16,12 +16,12 @@ class TransmitDemo(Module):
         self.comb += led.eq(counter[25])
 
         clock_pads = platform.request("sgmii_clock")
-        refclk = Signal()
+        refclk_div2 = Signal()
         self.specials += Instance("IBUFDS_GTE2",
             i_CEB=0,
             i_I=clock_pads.p,
             i_IB=clock_pads.n,
-            o_O=refclk
+            o_ODIV2=refclk_div2
         )
 
         txoutclk = Signal()
@@ -49,13 +49,13 @@ class TransmitDemo(Module):
                 p_CPLL_FBDIV=4,
                 p_CPLL_FBDIV_45=5,
                 p_CPLL_REFCLK_DIV=1,
-                p_RXOUT_DIV=4,
-                p_TXOUT_DIV=4,
+                p_RXOUT_DIV=2,
+                p_TXOUT_DIV=2,
                 o_CPLLLOCK=platform.request("user_led"),
                 i_CPLLLOCKEN=1,
                 i_CPLLREFCLKSEL=0b001,
                 i_TSTIN=2**20-1,
-                i_GTREFCLK0=refclk,
+                i_GTREFCLK0=refclk_div2,
 
                 # TX clock
                 p_TXBUF_EN="FALSE",
