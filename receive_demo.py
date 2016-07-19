@@ -24,6 +24,16 @@ class ReceiveDemo(Module):
             o_ODIV2=refclk_div2
         )
 
+        rstpulsed = Signal()
+        rxdlyreset = Signal()
+        self.sync += [
+            rxdlyreset.eq(0),
+            If(platform.request("user_btn_n") & ~rstpulsed,
+                rstpulsed.eq(1),
+                rxdlyreset.eq(1)
+            )
+        ]
+
         rxoutclk = Signal()
         rxdata = Signal(64)
         rx_pads = platform.request("sfp_rx")
@@ -61,7 +71,7 @@ class ReceiveDemo(Module):
                 # Startup/Reset
                 i_GTRXRESET=platform.request("user_btn_c"),
                 #o_RXRESETDONE=,
-                #i_RXDLYSRESET=,
+                i_RXDLYSRESET=rxdlyreset,
                 #o_RXDLYSRESETDONE=,
                 #o_RXPHALIGNDONE=,
 
