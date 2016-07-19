@@ -77,9 +77,9 @@ class TransmitDemo(Module):
                 p_TX_DATA_WIDTH=20,
                 p_TX_INT_DATAWIDTH=0,
                 i_TXUSERRDY=1,
-                i_TXCHARDISPMODE=1,
-                i_TXCHARDISPVAL=1,
-                i_TXDATA=0xff,
+                i_TXCHARDISPMODE=0,
+                i_TXCHARDISPVAL=0,
+                i_TXDATA=0b0001111100011111,
                 i_TXUSRCLK=ClockSignal("tx"),
                 i_TXUSRCLK2=ClockSignal("tx"),
 
