@@ -10,10 +10,15 @@ class ReceiveDemo(Module):
             i_I=sys_clock_pads.p, i_IB=sys_clock_pads.n,
             o_O=self.cd_sys.clk)
 
-        led = platform.request("user_led")
-        counter = Signal(26)
-        self.sync += counter.eq(counter + 1)
-        self.comb += led.eq(counter[25])
+        led_clksys = platform.request("user_led")
+        counter_clksys = Signal(26)
+        self.sync += counter_clksys.eq(counter_clksys + 1)
+        self.comb += led_clksys.eq(counter_clksys[25])
+
+        led_clkrx = platform.request("user_led")
+        counter_clkrx = Signal(26)
+        self.sync.rx += counter_clkrx.eq(counter_clkrx + 1)
+        self.comb += led_clkrx.eq(counter_clkrx[25])
 
         clock_pads = platform.request("sgmii_clock")
         refclk_div2 = Signal()
@@ -120,11 +125,6 @@ class ReceiveDemo(Module):
         self.clock_domains.cd_rx = ClockDomain()
         self.specials += Instance("BUFG",
             i_I=rxoutclk, o_O=self.cd_rx.clk)
-
-        led = platform.request("user_led")
-        counter = Signal(26)
-        self.sync.rx += counter.eq(counter + 1)
-        self.comb += led.eq(counter[25])
 
         for i in range(4):
             self.comb += platform.request("user_led").eq(rxdata[i])

@@ -10,10 +10,15 @@ class TransmitDemo(Module):
             i_I=sys_clock_pads.p, i_IB=sys_clock_pads.n,
             o_O=self.cd_sys.clk)
 
-        led = platform.request("user_led")
-        counter = Signal(26)
-        self.sync += counter.eq(counter + 1)
-        self.comb += led.eq(counter[25])
+        led_clksys = platform.request("user_led")
+        counter_clksys = Signal(26)
+        self.sync += counter_clksys.eq(counter_clksys + 1)
+        self.comb += led_clksys.eq(counter_clksys[25])
+
+        led_clktx = platform.request("user_led")
+        counter_clktx = Signal(26)
+        self.sync.tx += counter_clktx.eq(counter_clktx + 1)
+        self.comb += led_clktx.eq(counter_clktx[25])
 
         clock_pads = platform.request("sgmii_clock")
         refclk_div2 = Signal()
@@ -95,11 +100,6 @@ class TransmitDemo(Module):
         self.clock_domains.cd_tx = ClockDomain()
         self.specials += Instance("BUFG",
             i_I=txoutclk, o_O=self.cd_tx.clk)
-
-        led = platform.request("user_led")
-        counter = Signal(26)
-        self.sync.tx += counter.eq(counter + 1)
-        self.comb += led.eq(counter[25])
 
 
 if __name__ == "__main__":
