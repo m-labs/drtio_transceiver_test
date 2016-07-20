@@ -14,8 +14,8 @@ class WordAligner(Module):
 
         # # #
 
-        buf = Signal(10*(words_per_cycle + 1))
-        self.sync += buf.eq(Cat(self.input, buf[:10]))
+        buf = Signal(2*10*words_per_cycle)
+        self.sync += buf.eq(Cat(buf[10*words_per_cycle:], self.input))
 
         self.sync += self.comma_found.eq(0)
         for i in range(10*words_per_cycle):
@@ -24,3 +24,26 @@ class WordAligner(Module):
                   self.position.eq(i)
             )
         self.sync += self.output.eq(buf >> self.position)
+
+
+def test_word_aligner():
+    dut = WordAligner(2)
+
+    def tb():
+        for align in range(20):
+            while True:
+                for i in range(2):
+                    yield dut.input.eq(comma << align)
+                    yield
+                    if align > 10:
+                        yield dut.input.eq(comma >> (20-align))
+                    yield
+                if (yield dut.comma_found):
+                    print(align, (yield dut.position))
+                    break
+
+    run_simulation(dut, tb())
+
+
+if __name__ == "__main__":
+    test_word_aligner()
