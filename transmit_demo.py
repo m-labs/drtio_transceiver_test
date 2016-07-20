@@ -1,6 +1,8 @@
 from migen import *
 from migen.build.platforms import kc705
 
+import encoder
+
 
 class TransmitDemo(Module):
     def __init__(self, platform):
@@ -30,6 +32,7 @@ class TransmitDemo(Module):
         )
 
         txoutclk = Signal()
+        txdata = Signal(20)
         tx_pads = platform.request("sfp_tx")
         self.comb += platform.request("sfp_tx_disable_n").eq(1)
         self.specials += \
@@ -83,9 +86,9 @@ class TransmitDemo(Module):
                 p_TX_DATA_WIDTH=20,
                 p_TX_INT_DATAWIDTH=0,
                 i_TXUSERRDY=1,
-                i_TXCHARDISPMODE=0,
-                i_TXCHARDISPVAL=0,
-                i_TXDATA=0b0001111100011111,
+                i_TXCHARDISPMODE=Cat(txdata[9], txdata[19]),
+                i_TXCHARDISPVAL=Cat(txdata[8], txdata[18]),
+                i_TXDATA=Cat(txdata[:8], txdata[10:18]),
                 i_TXUSRCLK=ClockSignal("tx"),
                 i_TXUSRCLK2=ClockSignal("tx"),
 
@@ -97,6 +100,14 @@ class TransmitDemo(Module):
                 o_GTXTXP=tx_pads.p,
                 o_GTXTXN=tx_pads.n,
             )
+
+        self.comb += [
+            If(platform.request("user_btn_s"),
+                txdata.eq(encoder.comma | encoder.comma << 10)
+            ).Else(
+                txdata.eq(0b00000111110000011111)
+            )
+        ]
 
         self.clock_domains.cd_tx = ClockDomain()
         self.specials += Instance("BUFG",

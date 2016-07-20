@@ -1,6 +1,8 @@
 from migen import *
 from migen.build.platforms import kc705
 
+import encoder
+
 
 class ReceiveDemo(Module):
     def __init__(self, platform):
@@ -29,6 +31,8 @@ class ReceiveDemo(Module):
             o_ODIV2=refclk_div2
         )
 
+        self.submodules.word_aligner = ClockDomainsRenamer("rx")(encoder.WordAligner(2))
+
         rstpulsed = Signal()
         rxdlyreset = Signal()
         self.sync += [
@@ -40,7 +44,7 @@ class ReceiveDemo(Module):
         ]
 
         rxoutclk = Signal()
-        rxdata = Signal(64)
+        rxdata = Signal(20)
         rx_pads = platform.request("sfp_rx")
         self.comb += platform.request("sfp_tx_disable_n").eq(1)
         self.specials += \
@@ -110,10 +114,9 @@ class ReceiveDemo(Module):
                 p_RX_DATA_WIDTH=20,
                 p_RX_INT_DATAWIDTH=0,
                 i_RXUSERRDY=1,
-                o_RXDATA=rxdata,
-                #o_RXCHARISK=,
-                #o_RXDISPERR=,
-                #o_RXNOTINTABLE=,
+                o_RXDISPERR=Cat(rxdata[9], rxdata[19]),
+                o_RXCHARISK=Cat(rxdata[8], rxdata[18]),
+                o_RXDATA=Cat(rxdata[:8], rxdata[10:18]),
 
                 # disable TX
                 i_TXPD=0b11,
@@ -123,12 +126,13 @@ class ReceiveDemo(Module):
                 i_GTXRXN=rx_pads.n,
             )
 
+        self.comb += self.word_aligner.input.eq(rxdata)
+
         self.clock_domains.cd_rx = ClockDomain()
         self.specials += Instance("BUFG",
             i_I=rxoutclk, o_O=self.cd_rx.clk)
 
-        for i in range(4):
-            self.comb += platform.request("user_led").eq(rxdata[i])
+        self.comb += platform.request("user_led").eq(self.word_aligner.found)
 
 
 if __name__ == "__main__":
