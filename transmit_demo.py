@@ -114,9 +114,9 @@ class TransmitDemo(Module):
         word = Signal(5)
         for i in range(4):
             self.comb += word[i].eq(platform.request("user_dip_btn"))
-
-        send_sync = Signal()
         self.sync.tx += txdata.eq((~word << 15) | (word << 10) | encoder.comma)
+        # FIXME: this breaks 
+        #self.sync.tx += txdata.eq((encoder.comma << 10) | (~word << 5) | word)
 
         self.clock_domains.cd_tx = ClockDomain()
         self.specials += Instance("BUFG",

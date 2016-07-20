@@ -133,6 +133,8 @@ class ReceiveDemo(Module):
 
         self.comb += platform.request("user_led").eq(self.word_aligner.comma_found)
         for i in range(4):
+            # FIXME: this breaks
+            #self.comb += platform.request("user_led").eq(self.word_aligner.output[i])
             self.comb += platform.request("user_led").eq(self.word_aligner.output[10+i])
 
 
