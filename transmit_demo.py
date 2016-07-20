@@ -31,6 +31,16 @@ class TransmitDemo(Module):
             o_ODIV2=refclk_div2
         )
 
+        rstpulsed = Signal()
+        txdlyreset = Signal()
+        self.sync += [
+            txdlyreset.eq(0),
+            If(platform.request("user_btn_n") & ~rstpulsed,
+                rstpulsed.eq(1),
+                txdlyreset.eq(1)
+            )
+        ]
+
         txoutclk = Signal()
         txdata = Signal(20)
         tx_pads = platform.request("sfp_tx")
@@ -78,9 +88,9 @@ class TransmitDemo(Module):
 
                 # Startup/Reset
                 i_GTTXRESET=platform.request("user_btn_c"),
-                #i_TXDLYSRESET=txdlyreset,
-                #o_TXDLYSRESETDONE=txdlyresetdone,
-                #o_TXPHALIGNDONE=txphaligndone,
+                i_TXDLYSRESET=txdlyreset,
+                #o_TXDLYSRESETDONE=,
+                o_TXPHALIGNDONE=platform.request("user_led"),
 
                 # TX data
                 p_TX_DATA_WIDTH=20,
@@ -101,13 +111,12 @@ class TransmitDemo(Module):
                 o_GTXTXN=tx_pads.n,
             )
 
-        self.comb += [
-            If(platform.request("user_btn_s"),
-                txdata.eq(encoder.comma | encoder.comma << 10)
-            ).Else(
-                txdata.eq(0b00000111110000011111)
-            )
-        ]
+        word = Signal(5)
+        for i in range(4):
+            self.comb += word[i].eq(platform.request("user_dip_btn"))
+
+        send_sync = Signal()
+        self.sync.tx += txdata.eq((~word << 15) | (word << 10) | encoder.comma)
 
         self.clock_domains.cd_tx = ClockDomain()
         self.specials += Instance("BUFG",

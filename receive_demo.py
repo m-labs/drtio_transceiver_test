@@ -80,7 +80,6 @@ class ReceiveDemo(Module):
 
                 # Startup/Reset
                 i_GTRXRESET=platform.request("user_btn_c"),
-                o_RXRESETDONE=platform.request("user_led"),
                 i_RXDLYSRESET=rxdlyreset,
                 #o_RXDLYSRESETDONE=,
                 o_RXPHALIGNDONE=platform.request("user_led"),
@@ -132,7 +131,9 @@ class ReceiveDemo(Module):
         self.specials += Instance("BUFG",
             i_I=rxoutclk, o_O=self.cd_rx.clk)
 
-        self.comb += platform.request("user_led").eq(self.word_aligner.found)
+        self.comb += platform.request("user_led").eq(self.word_aligner.comma_found)
+        for i in range(4):
+            self.comb += platform.request("user_led").eq(self.word_aligner.output[10+i])
 
 
 if __name__ == "__main__":
