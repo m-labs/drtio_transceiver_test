@@ -1,6 +1,7 @@
 from migen import *
 from migen.build.platforms import kc705
 
+from gtx_init import GTXInit
 import encoder
 
 
@@ -31,15 +32,9 @@ class TransmitDemo(Module):
             o_ODIV2=refclk_div2
         )
 
-        rstpulsed = Signal()
-        txdlyreset = Signal()
-        self.sync += [
-            txdlyreset.eq(0),
-            If(platform.request("user_btn_n") & ~rstpulsed,
-                rstpulsed.eq(1),
-                txdlyreset.eq(1)
-            )
-        ]
+        gtx_init = GTXInit(156000000, False)
+        self.submodules += gtx_init
+        self.comb += platform.request("user_led").eq(gtx_init.done)
 
         txoutclk = Signal()
         txdata = Signal(20)
@@ -70,7 +65,7 @@ class TransmitDemo(Module):
                 p_CPLL_REFCLK_DIV=1,
                 p_RXOUT_DIV=2,
                 p_TXOUT_DIV=2,
-                #o_CPLLLOCK=platform.request("user_led"),
+                o_CPLLLOCK=gtx_init.cplllock,
                 i_CPLLLOCKEN=1,
                 i_CPLLREFCLKSEL=0b001,
                 i_TSTIN=2**20-1,
@@ -87,15 +82,16 @@ class TransmitDemo(Module):
                 i_RXPD=0b11,
 
                 # Startup/Reset
-                i_GTTXRESET=platform.request("user_btn_c"),
-                i_TXDLYSRESET=txdlyreset,
-                #o_TXDLYSRESETDONE=,
-                o_TXPHALIGNDONE=platform.request("user_led"),
+                i_GTTXRESET=gtx_init.gtXxreset,
+                o_TXRESETDONE=gtx_init.Xxresetdone,
+                i_TXDLYSRESET=gtx_init.Xxdlysreset,
+                o_TXDLYSRESETDONE=gtx_init.Xxdlysresetdone,
+                o_TXPHALIGNDONE=gtx_init.Xxphaligndone,
+                i_TXUSERRDY=gtx_init.Xxuserrdy,
 
                 # TX data
                 p_TX_DATA_WIDTH=20,
                 p_TX_INT_DATAWIDTH=0,
-                i_TXUSERRDY=1,
                 i_TXCHARDISPMODE=Cat(txdata[9], txdata[19]),
                 i_TXCHARDISPVAL=Cat(txdata[8], txdata[18]),
                 i_TXDATA=Cat(txdata[:8], txdata[10:18]),

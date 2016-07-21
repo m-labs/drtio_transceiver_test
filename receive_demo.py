@@ -1,6 +1,7 @@
 from migen import *
 from migen.build.platforms import kc705
 
+from gtx_init import GTXInit
 import encoder
 
 
@@ -31,17 +32,9 @@ class ReceiveDemo(Module):
             o_ODIV2=refclk_div2
         )
 
-        self.submodules.word_aligner = ClockDomainsRenamer("rx")(encoder.WordAligner(2))
-
-        rstpulsed = Signal()
-        rxdlyreset = Signal()
-        self.sync += [
-            rxdlyreset.eq(0),
-            If(platform.request("user_btn_n") & ~rstpulsed,
-                rstpulsed.eq(1),
-                rxdlyreset.eq(1)
-            )
-        ]
+        gtx_init = GTXInit(156000000, True)
+        self.submodules += gtx_init
+        self.comb += platform.request("user_led").eq(gtx_init.done)
 
         rxoutclk = Signal()
         rxdata = Signal(20)
@@ -72,17 +65,19 @@ class ReceiveDemo(Module):
                 p_CPLL_REFCLK_DIV=1,
                 p_RXOUT_DIV=2,
                 p_TXOUT_DIV=2,
-                #o_CPLLLOCK=platform.request("user_led"),
+                o_CPLLLOCK=gtx_init.cplllock,
                 i_CPLLLOCKEN=1,
                 i_CPLLREFCLKSEL=0b001,
                 i_TSTIN=2**20-1,
                 i_GTREFCLK0=refclk_div2,
 
                 # Startup/Reset
-                i_GTRXRESET=platform.request("user_btn_c"),
-                i_RXDLYSRESET=rxdlyreset,
-                #o_RXDLYSRESETDONE=,
-                o_RXPHALIGNDONE=platform.request("user_led"),
+                i_GTRXRESET=gtx_init.gtXxreset,
+                o_RXRESETDONE=gtx_init.Xxresetdone,
+                i_RXDLYSRESET=gtx_init.Xxdlysreset,
+                o_RXDLYSRESETDONE=gtx_init.Xxdlysresetdone,
+                o_RXPHALIGNDONE=gtx_init.Xxphaligndone,
+                i_RXUSERRDY=gtx_init.Xxuserrdy,
 
                 # RX AFE
                 p_RX_DFE_XYD_CFG=0,
@@ -112,7 +107,6 @@ class ReceiveDemo(Module):
                 # RX data
                 p_RX_DATA_WIDTH=20,
                 p_RX_INT_DATAWIDTH=0,
-                i_RXUSERRDY=1,
                 o_RXDISPERR=Cat(rxdata[9], rxdata[19]),
                 o_RXCHARISK=Cat(rxdata[8], rxdata[18]),
                 o_RXDATA=Cat(rxdata[:8], rxdata[10:18]),
@@ -124,13 +118,12 @@ class ReceiveDemo(Module):
                 i_GTXRXP=rx_pads.p,
                 i_GTXRXN=rx_pads.n,
             )
-
-        self.comb += self.word_aligner.input.eq(rxdata)
-
         self.clock_domains.cd_rx = ClockDomain()
         self.specials += Instance("BUFG",
             i_I=rxoutclk, o_O=self.cd_rx.clk)
 
+        self.submodules.word_aligner = ClockDomainsRenamer("rx")(encoder.WordAligner(2))
+        self.comb += self.word_aligner.input.eq(rxdata)
         self.comb += platform.request("user_led").eq(self.word_aligner.comma_found)
         for i in range(4):
             # FIXME: this breaks
