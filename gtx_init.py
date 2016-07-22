@@ -1,13 +1,13 @@
 from math import ceil
 
 from migen import *
-from migen.genlib.cdc import MultiReg
+from migen.genlib.cdc import MultiReg, PulseSynchronizer
 from migen.genlib.misc import WaitTimer
 from migen.genlib.fsm import FSM
 
 
 class GTXInit(Module):
-    def __init__(self, clk_freq, rx):
+    def __init__(self, sys_clk_freq, rx):
         self.done = Signal()
         self.restart = Signal()
 
@@ -46,7 +46,7 @@ class GTXInit(Module):
 
         # After configuration, transceiver resets have to stay low for
         # at least 500ns (see AR43482)
-        startup_cycles = ceil(500*clk_freq/1000000000)
+        startup_cycles = ceil(500*sys_clk_freq/1000000000)
         startup_timer = WaitTimer(startup_cycles)
         self.submodules += startup_timer
 
@@ -114,3 +114,53 @@ class GTXInit(Module):
             self.done.eq(1),
             If(self.restart, NextState("RESET_GTX"))
         )
+
+
+# Changes the phase of the transceiver RX clock to align the comma to
+# the MSBs of RXDATA, fixing the latency.
+#
+# This is implemented by repeatedly resetting the transceiver until it
+# gives out the correct phase. Each reset gives a random phase.
+#
+# If Xilinx had designed the GTX transceiver correctly, RXSLIDE_MODE=PMA
+# would achieve this faster and in a cleaner way. But:
+#  * the phase jumps are of 2 UI at every second RXSLIDE pulse, instead
+#    of 1 UI at every pulse. It is unclear what the latency becomes.
+#  * RXSLIDE_MODE=PMA cannot be used with the RX buffer bypassed.
+# Those design flaws make RXSLIDE_MODE=PMA yet another broken and useless
+# transceiver "feature".
+class BruteforceClockAligner(Module):
+    def __init__(self, comma, sys_clk_freq, check_period=6e-3):
+        self.rxdata = Signal(20)
+        self.restart = Signal()
+
+        check_max_val = ceil(check_period*sys_clk_freq)
+        check_counter = Signal(max=check_max_val+1)
+        check = Signal()
+        self.sync += [
+            check.eq(0),
+            If(check_counter == 0,
+                check.eq(1),
+                check_counter.eq(check_max_val)
+            ).Else(
+                check_counter.eq(check_counter-1)
+            )
+        ]
+
+        comma_seen_rxclk = Signal()
+        comma_seen = Signal()
+        self.specials += MultiReg(comma_seen_rxclk, comma_seen)
+        comma_seen_reset = PulseSynchronizer("sys", "rx")
+        self.submodules += comma_seen_reset
+        self.sync.rx += \
+            If(comma_seen_reset.o,
+                comma_seen_rxclk.eq(0)
+            ).Elif(self.rxdata[10:] == comma,
+                comma_seen_rxclk.eq(1)
+            )
+
+        self.comb += \
+            If(check,
+                If(~comma_seen, self.restart.eq(1)),
+                comma_seen_reset.i.eq(1)
+            )
