@@ -9,6 +9,7 @@ from migen.genlib.fsm import FSM
 class GTXInit(Module):
     def __init__(self, clk_freq, rx):
         self.done = Signal()
+        self.restart = Signal()
 
         # GTX signals
         self.cplllock = Signal()
@@ -110,6 +111,6 @@ class GTXInit(Module):
         )
         startup_fsm.act("READY",
             Xxuserrdy.eq(1),
-            self.done.eq(1)
+            self.done.eq(1),
+            If(self.restart, NextState("RESET_GTX"))
         )
-
