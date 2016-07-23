@@ -30,38 +30,38 @@ def reverse_table(inputs, flips, nbits):
 # 5b6b
 
 table_5b6b = [
-    0b100111,
-    0b011101,
-    0b101101,
+    0b011000,
+    0b100010,
+    0b010010,
     0b110001,
-    0b110101,
+    0b001010,
     0b101001,
     0b011001,
-    0b111000,
-    0b111001,
+    0b000111,
+    0b000110,
     0b100101,
     0b010101,
     0b110100,
     0b001101,
     0b101100,
     0b011100,
-    0b010111,
-    0b011011,
+    0b101000,
+    0b100100,
     0b100011,
     0b010011,
     0b110010,
     0b001011,
     0b101010,
     0b011010,
-    0b111010,
-    0b110011,
+    0b000101,
+    0b001100,
     0b100110,
     0b010110,
-    0b110110,
+    0b001001,
     0b001110,
-    0b101110,
-    0b011110,
-    0b101011,    
+    0b010001,
+    0b100001,
+    0b010100,   
 ]
 table_5b6b_unbalanced = [bool(disparity(c, 6)) for c in table_5b6b]
 table_5b6b_flip = list(table_5b6b_unbalanced)
@@ -72,14 +72,14 @@ table_6b5b = reverse_table(table_5b6b, table_5b6b_flip, 6)
 # 3b4b
 
 table_3b4b = [
-    0b1011,
+    0b0100,
     0b1001,
     0b0101,
-    0b1100,
-    0b1101,
+    0b0011,
+    0b0010,
     0b1010,
     0b0110,
-    0b1110,  # primary D.x.7
+    0b0001,  # primary D.x.7
 ]
 table_3b4b_unbalanced = [bool(disparity(c, 4)) for c in table_3b4b]
 table_3b4b_flip = list(table_3b4b_unbalanced)
@@ -109,7 +109,7 @@ class SingleEncoder(Module):
         code6b_flip = Signal()
         self.sync += [
             If(self.k,
-                code6b.eq(0b001111),
+                code6b.eq(0b110000),
                 code6b_unbalanced.eq(1),
                 code6b_flip.eq(1)
             ).Else(
@@ -150,8 +150,8 @@ class SingleEncoder(Module):
         output_6b = Signal(6)
         disp_inter = Signal()
         self.comb += [
-            disp_inter.eq(self.disp_out ^ code6b_unbalanced),
-            If(self.disp_in & code6b_flip,
+            disp_inter.eq(self.disp_in ^ code6b_unbalanced),
+            If(~self.disp_in & code6b_flip,
                 output_6b.eq(~code6b)
             ).Else(
                 output_6b.eq(code6b)
@@ -169,7 +169,7 @@ class SingleEncoder(Module):
                 output_4b.eq(0b1000)
             ).Else(
                 self.disp_out.eq(disp_inter ^ code4b_unbalanced),
-                If(disp_inter & code4b_flip,
+                If(~disp_inter & code4b_flip,
                     output_4b.eq(~code4b)
                 ).Else(
                     output_4b.eq(code4b)
@@ -177,7 +177,7 @@ class SingleEncoder(Module):
             )
         ]
 
-        self.comb += self.output.eq(Cat(output_6b, output_4b))
+        self.comb += self.output.eq(Cat(output_4b, output_6b))
 
 
 class Encoder(Module):
@@ -188,7 +188,7 @@ class Encoder(Module):
 
         # # #
 
-        encoders = [SingleEncoder() for _ in nwords]
+        encoders = [SingleEncoder() for _ in range(nwords)]
         self.submodules += encoders
 
         self.sync += encoders[0].disp_in.eq(encoders[-1].disp_out)
@@ -201,4 +201,3 @@ class Encoder(Module):
                 e.k.eq(k)
             ]
             self.sync += output.eq(e.output)
-
