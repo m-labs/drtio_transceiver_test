@@ -122,7 +122,7 @@ table_4b3b_kp[0b0111] = 0b111
 
 
 class SingleEncoder(Module):
-    def __init__(self):
+    def __init__(self, lsb_first=False):
         self.d = Signal(8)
         self.k = Signal()
         self.disp_in = Signal()
@@ -210,18 +210,24 @@ class SingleEncoder(Module):
             )
         ]
 
-        self.comb += self.output.eq(Cat(output_4b, output_6b))
+        output_msb_first = Signal(10)
+        self.comb += output_msb_first.eq(Cat(output_4b, output_6b))
+        if lsb_first:
+            for i in range(10):
+                self.comb += self.output[i].eq(output_msb_first[9-i])
+        else:
+            self.comb += self.output.eq(output_msb_first)
 
 
 class Encoder(Module):
-    def __init__(self, nwords=1):
+    def __init__(self, nwords=1, lsb_first=False):
         self.d = [Signal(8) for _ in range(nwords)]
         self.k = [Signal() for _ in range(nwords)]
         self.output = [Signal(10) for _ in range(nwords)]
 
         # # #
 
-        encoders = [SingleEncoder() for _ in range(nwords)]
+        encoders = [SingleEncoder(lsb_first) for _ in range(nwords)]
         self.submodules += encoders
 
         self.sync += encoders[0].disp_in.eq(encoders[-1].disp_out)
@@ -237,16 +243,23 @@ class Encoder(Module):
 
 
 class Decoder(Module):
-    def __init__(self):
+    def __init__(self, lsb_first=False):
         self.input = Signal(10)
         self.d = Signal(8)
         self.k = Signal()
 
         # # #
 
-        code6b = self.input[4:]
+        input_msb_first = Signal(10)
+        if lsb_first:
+            for i in range(10):
+                self.comb += input_msb_first[i].eq(self.input[9-i])
+        else:
+            self.comb += input_msb_first.eq(self.input)
+
+        code6b = input_msb_first[4:]
         code5b = Signal(5)
-        code4b = self.input[:4]
+        code4b = input_msb_first[:4]
         code3b = Signal(3)
         self.sync += [
             self.k.eq(0),
