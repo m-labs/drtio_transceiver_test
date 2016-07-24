@@ -14,7 +14,7 @@ class GTXTransmitter(Module):
             o_ODIV2=refclk_div2
         )
 
-        self.submodules.gtx_init = GTXInit(156000000, False)
+        self.submodules.gtx_init = GTXInit(sys_clk_freq, False)
 
         txoutclk = Signal()
         txdata = Signal(20)
@@ -103,7 +103,7 @@ class GTXReceiver(Module):
             o_ODIV2=refclk_div2
         )
 
-        self.submodules.gtx_init = GTXInit(156000000, True)
+        self.submodules.gtx_init = GTXInit(sys_clk_freq, True)
 
         rxoutclk = Signal()
         rxdata = Signal(20)
@@ -190,7 +190,7 @@ class GTXReceiver(Module):
             i_I=rxoutclk, o_O=self.cd_rx.clk)
 
         self.submodules.clock_aligner = BruteforceClockAligner(
-            0b0101111100, 156000000)
+            0b0101111100, sys_clk_freq)
         self.comb += [
             self.clock_aligner.rxdata.eq(rxdata),
             self.gtx_init.restart.eq(self.clock_aligner.restart)
