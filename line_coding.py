@@ -14,8 +14,9 @@ def disparity(word, nbits):
     return n1 - n0
 
 
-def reverse_table(inputs, flips, nbits):
+def reverse_table_flip(inputs, flips, nbits):
     outputs = [None]*2**nbits
+
     for i, (word, flip) in enumerate(zip(inputs, flips)):
         if outputs[word] is not None:
             raise ValueError
@@ -25,7 +26,25 @@ def reverse_table(inputs, flips, nbits):
             if outputs[word_n] is not None:
                 raise ValueError
             outputs[word_n] = i
+
+    for i in range(len(outputs)):
+        if outputs[i] is None:
+            outputs[i] = 0
+
     return outputs
+
+
+def reverse_table(inputs, nbits):
+    outputs = [None]*2**nbits
+    for i, word in enumerate(inputs):
+        if outputs[word] is not None:
+            raise ValueError
+        outputs[word] = i
+    for i in range(len(outputs)):
+        if outputs[i] is None:
+            outputs[i] = 0
+    return outputs
+
 
 # 5b6b
 
@@ -61,13 +80,16 @@ table_5b6b = [
     0b001110,
     0b010001,
     0b100001,
-    0b010100,   
+    0b010100,
 ]
 table_5b6b_unbalanced = [bool(disparity(c, 6)) for c in table_5b6b]
 table_5b6b_flip = list(table_5b6b_unbalanced)
 table_5b6b_flip[7] = True
 
-table_6b5b = reverse_table(table_5b6b, table_5b6b_flip, 6)
+table_6b5b = reverse_table_flip(table_5b6b, table_5b6b_flip, 6)
+# K.28
+table_6b5b[0b001111] = 0b11100
+table_6b5b[0b110000] = 0b11100
 
 # 3b4b
 
@@ -85,10 +107,18 @@ table_3b4b_unbalanced = [bool(disparity(c, 4)) for c in table_3b4b]
 table_3b4b_flip = list(table_3b4b_unbalanced)
 table_3b4b_flip[3] = True
 
-table_4b3b = reverse_table(table_3b4b, table_3b4b_flip, 4)
+table_4b3b = reverse_table_flip(table_3b4b, table_3b4b_flip, 4)
 # alternative D.x.7
 table_4b3b[0b0111] = 0b0111
 table_4b3b[0b1000] = 0b0111
+
+table_4b3b_kn = reverse_table(table_3b4b, 4)
+table_4b3b_kp = reverse_table([~x & 0b1111 for x in table_3b4b], 4)
+# primary D.x.7 is not used
+table_4b3b_kn[0b0001] = 0b000
+table_4b3b_kn[0b1000] = 0b111
+table_4b3b_kp[0b1110] = 0b000
+table_4b3b_kp[0b0111] = 0b111
 
 
 class SingleEncoder(Module):
@@ -143,6 +173,10 @@ class SingleEncoder(Module):
                     alt7_rd0.eq(1)),
                 If((code5b == 11) | (code5b == 13) | (code5b == 14),
                     alt7_rd1.eq(1)),
+                If(self.k,
+                    alt7_rd0.eq(1),
+                    alt7_rd1.eq(1)
+                )
             )
         ]
 
@@ -160,11 +194,10 @@ class SingleEncoder(Module):
 
         output_4b = Signal(4)
         self.comb += [
-            # note: alt7_rd0 | alt7_rd1 => disp_inter == disp_in
-            If(~self.disp_in & alt7_rd0,
+            If(~disp_inter & alt7_rd0,
                 self.disp_out.eq(~self.disp_in),
                 output_4b.eq(0b0111)
-            ).Elif(self.disp_in & alt7_rd1,
+            ).Elif(disp_inter & alt7_rd1,
                 self.disp_out.eq(~self.disp_in),
                 output_4b.eq(0b1000)
             ).Else(
@@ -201,3 +234,32 @@ class Encoder(Module):
                 e.k.eq(k)
             ]
             self.sync += output.eq(e.output)
+
+
+class Decoder(Module):
+    def __init__(self):
+        self.input = Signal(10)
+        self.d = Signal(8)
+        self.k = Signal()
+
+        # # #
+
+        code6b = self.input[4:]
+        code5b = Signal(5)
+        code4b = self.input[:4]
+        code3b = Signal(3)
+        self.sync += [
+            self.k.eq(0),
+            If(code6b == 0b001111,
+                self.k.eq(1),
+                code3b.eq(Array(table_4b3b_kn)[code4b])
+            ).Elif(code6b == 0b110000,
+                self.k.eq(1),
+                code3b.eq(Array(table_4b3b_kp)[code4b])
+            ).Else(
+                code3b.eq(Array(table_4b3b)[code4b])
+            ),
+            code5b.eq(Array(table_6b5b)[code6b])
+        ]
+
+        self.comb += self.d.eq(Cat(code5b, code3b))
