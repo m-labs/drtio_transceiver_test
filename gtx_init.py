@@ -147,6 +147,7 @@ class BruteforceClockAligner(Module):
             )
         ]
 
+        comma_n = ~comma & 0b1111111111
         comma_seen_rxclk = Signal()
         comma_seen = Signal()
         self.specials += MultiReg(comma_seen_rxclk, comma_seen)
@@ -155,7 +156,7 @@ class BruteforceClockAligner(Module):
         self.sync.rx += \
             If(comma_seen_reset.o,
                 comma_seen_rxclk.eq(0)
-            ).Elif(self.rxdata[10:] == comma,
+            ).Elif((self.rxdata[:10] == comma) | (self.rxdata[:10] == comma_n),
                 comma_seen_rxclk.eq(1)
             )
 

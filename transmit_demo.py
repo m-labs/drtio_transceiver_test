@@ -2,7 +2,7 @@ from migen import *
 from migen.build.platforms import kc705
 
 from gtx_init import GTXInit
-import encoder
+from line_coding import Encoder
 
 
 class TransmitDemo(Module):
@@ -107,16 +107,23 @@ class TransmitDemo(Module):
                 o_GTXTXN=tx_pads.n,
             )
 
-        word = Signal(5)
-        for i in range(4):
-            self.comb += word[i].eq(platform.request("user_dip_btn"))
-        self.sync.tx += txdata.eq((~word << 15) | (word << 10) | encoder.comma)
-        # FIXME: this breaks 
-        #self.sync.tx += txdata.eq((encoder.comma << 10) | (~word << 5) | word)
-
         self.clock_domains.cd_tx = ClockDomain()
         self.specials += Instance("BUFG",
             i_I=txoutclk, o_O=self.cd_tx.clk)
+
+        encoder = ClockDomainsRenamer("tx")(Encoder(2, True))
+        self.submodules += encoder
+
+        word = Signal(5)
+        for i in range(4):
+            self.sync.tx += word[i].eq(platform.request("user_dip_btn"))
+        self.comb += [
+            encoder.k[0].eq(1),
+            encoder.d[0].eq((5 << 5) | 28),
+            encoder.k[1].eq(0),
+            encoder.d[1].eq(word),
+            txdata.eq(Cat(encoder.output[0], encoder.output[1]))
+        ]
 
 
 if __name__ == "__main__":

@@ -1,8 +1,11 @@
 from migen import *
 from migen.build.platforms import kc705
 
-from gtx_init import GTXInit
-import encoder
+from misoc.cores.uart.core import RS232PHY
+
+import wishbonebridge
+from gtx_init import GTXInit, BruteforceClockAligner
+from line_coding import Decoder
 
 
 class ReceiveDemo(Module):
@@ -122,13 +125,30 @@ class ReceiveDemo(Module):
         self.specials += Instance("BUFG",
             i_I=rxoutclk, o_O=self.cd_rx.clk)
 
-        self.submodules.word_aligner = ClockDomainsRenamer("rx")(encoder.WordAligner(2))
-        self.comb += self.word_aligner.input.eq(rxdata)
-        self.comb += platform.request("user_led").eq(self.word_aligner.comma_found)
+        clock_aligner = BruteforceClockAligner(0b0101111100, 156000000)
+        self.submodules += clock_aligner
+        self.comb += [
+            clock_aligner.rxdata.eq(rxdata),
+            gtx_init.restart.eq(clock_aligner.restart)
+        ]
+
+        decoders = [ClockDomainsRenamer("rx")(Decoder(True)) for _ in range(2)]
+        self.submodules += decoders
+
+        self.comb += [
+            decoders[0].input.eq(rxdata[:10]),
+            decoders[1].input.eq(rxdata[10:]),
+        ]
         for i in range(4):
-            # FIXME: this breaks
-            #self.comb += platform.request("user_led").eq(self.word_aligner.output[i])
-            self.comb += platform.request("user_led").eq(self.word_aligner.output[10+i])
+            self.comb += platform.request("user_led").eq(decoders[1].d[i])
+
+        self.submodules.phy = ClockDomainsRenamer("rx")(
+            RS232PHY(platform.request("serial"), 62500000, 115200))
+        self.submodules.bridge = ClockDomainsRenamer("rx")(
+            wishbonebridge.WishboneStreamingBridge(self.phy, 62500000))
+        self.comb += self.bridge.wishbone.ack.eq(self.bridge.wishbone.stb)
+        self.sync.rx += self.bridge.wishbone.dat_r.eq(rxdata)
+
 
 
 if __name__ == "__main__":
