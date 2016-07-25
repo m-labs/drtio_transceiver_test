@@ -1,3 +1,5 @@
+# Based on LiteSATA by Enjoy-Digital
+
 from migen import *
 
 from gtx_init import GTXInit, BruteforceClockAligner

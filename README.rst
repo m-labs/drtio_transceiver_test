@@ -7,6 +7,8 @@ Communications are between two KC705 boards connected over SFP at 1.25Gbps line 
 
 Requires Migen 0.4+ and ARTIQ 2.0+.
 
+This work was supported by the Army Research Lab.
+
 Remote LED demonstration
 ------------------------
 

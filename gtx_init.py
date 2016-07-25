@@ -7,6 +7,7 @@ from migen.genlib.fsm import FSM
 
 
 class GTXInit(Module):
+    # Based on LiteSATA by Enjoy-Digital
     def __init__(self, sys_clk_freq, rx):
         self.done = Signal()
         self.restart = Signal()
