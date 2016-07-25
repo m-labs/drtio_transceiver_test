@@ -22,5 +22,5 @@ Managing multiple KC705 boards with OpenOCD
 If you are using the OpenOCD Conda package:
 
 1. locate the OpenOCD scripts directory with:
-    ``python3 -c "import artiq.frontend.artiq_flash as af; print(af.scripts_path)"``
+   ``python3 -c "import artiq.frontend.artiq_flash as af; print(af.scripts_path)"``
 2. add ``-s <scripts directory>`` to the OpenOCD command line.
