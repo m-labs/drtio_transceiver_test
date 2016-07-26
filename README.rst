@@ -12,7 +12,7 @@ This work was supported by the Army Research Lab.
 Remote LED demonstration
 ------------------------
 
-Build the designs by running ``remote_led.py``. The four DIP switches on the transmitting KC705 control LEDs 2-5 on the receiving KC705. LEDs 0-1 on both boards blink from the system and transceiver data clocks, respectively. 
+Build the designs by running ``demo_remote_led.py``. The four DIP switches on the transmitting KC705 control LEDs 2-5 on the receiving KC705. LEDs 0-1 on both boards blink from the system and transceiver data clocks, respectively. 
 
 Managing multiple KC705 boards with OpenOCD
 -------------------------------------------
