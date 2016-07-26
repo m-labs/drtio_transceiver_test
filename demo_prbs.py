@@ -9,6 +9,7 @@ from misoc.cores.uart import RS232PHY
 from gtx import GTXTransmitter, GTXReceiver
 from prbs import PRBSGenerator, PRBSChecker
 from wishbonebridge import WishboneStreamingBridge
+from comm_uart import CommUART
 
 
 class PRBSTX(Module):
@@ -104,17 +105,30 @@ def build_rx():
     platform.build(top, build_dir="prbs_rx")
 
 
+def readout(port):
+    with CommUART(port) as comm:
+        print(comm.read(0))
+
+
 def main():
     parser = argparse.ArgumentParser(description="PRBS demo")
     parser.add_argument("--no-tx", default=False, action="store_true",
                         help="do not build TX bitstream")
     parser.add_argument("--no-rx", default=False, action="store_true",
                         help="do not build RX bitstream")
+    parser.add_argument("--readout", metavar="SERIAL_PORT",
+                        default=None, type=str,
+                        help="read out error counter value from the board "
+                             "on the specified serial device. Disables all "
+                             "bitstream builds.")
     args = parser.parse_args()
-    if not args.no_tx:
-        build_tx()
-    if not args.no_rx:
-        build_rx()
+    if args.readout is not None:
+        readout(args.readout)
+    else:
+        if not args.no_tx:
+            build_tx()
+        if not args.no_rx:
+            build_rx()
 
 
 if __name__ == "__main__":
