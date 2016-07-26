@@ -4,7 +4,7 @@ from functools import reduce
 from migen import *
 
 
-class Generator(Module):
+class PRBSGenerator(Module):
     def __init__(self, n_out, n_state=23, taps=[17, 22]):
         self.o = Signal(n_out)
 
@@ -24,7 +24,7 @@ class Generator(Module):
         ]
 
 
-class Checker(Module):
+class PRBSChecker(Module):
     def __init__(self, n_in, n_state=23, taps=[17, 22]):
         self.i = Signal(n_in)
         self.errors = Signal(n_in)

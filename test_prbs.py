@@ -2,11 +2,11 @@ import unittest
 
 from migen import *
 
-import prbs
+from prbs import PRBSGenerator, PRBSChecker
 
 
 def prbs_genenerate(dw, length):
-    dut = prbs.Generator(dw)
+    dut = PRBSGenerator(dw)
     output = []
     def pump():
         yield
@@ -19,7 +19,7 @@ def prbs_genenerate(dw, length):
 
 def prbs_check(dw, seq):
     error_count = 0
-    dut = prbs.Checker(dw)
+    dut = PRBSChecker(dw)
     def pump():
         nonlocal error_count
         for w in seq:
