@@ -1,6 +1,7 @@
 # Based on LiteSATA by Enjoy-Digital
 
 from migen import *
+from migen.genlib.resetsync import AsyncResetSynchronizer
 
 from gtx_init import GTXInit, BruteforceClockAligner
 from line_coding import Encoder, Decoder
@@ -90,6 +91,8 @@ class GTXTransmitter(Module):
         self.clock_domains.cd_tx = ClockDomain()
         self.specials += Instance("BUFG",
             i_I=txoutclk, o_O=self.cd_tx.clk)
+        self.specials += AsyncResetSynchronizer(
+            self.cd_tx, ~self.gtx_init.done)
 
         self.submodules.encoder = ClockDomainsRenamer("tx")(Encoder(2, True))
         self.comb += txdata.eq(Cat(self.encoder.output[0], self.encoder.output[1]))
