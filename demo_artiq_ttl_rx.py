@@ -43,7 +43,8 @@ class ARTIQTTLRX(Module):
                 ).Else(
                     back_buffer[:16].eq(
                         Cat(gtx.decoders[0].d, gtx.decoders[1].d))
-                )
+                ),
+                frame_hi.eq(1)
             )
         ]
 
