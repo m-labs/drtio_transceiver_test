@@ -5,6 +5,10 @@ from migen.genlib.fsm import *
 from misoc.interconnect import wishbone
 
 
+__all__ = ["CSRInitializer",
+           "InstEnd", "InstWrite", "InstReadUntil0", "InstReadUntil1"]
+
+
 # Instruction set:
 #  <2> OP  <6> ADDRESS  <8> DATA_BSEL
 #
