@@ -130,6 +130,7 @@ class ARTIQTTLTX(MiniSoC, AMPSoC):
             phy = ttl_simple.Output(platform.request("ttl"))
             self.submodules += phy
             rtio_channels.append(rtio.Channel.from_phy(phy))
+        self.comb += platform.request("sfp_tx_disable_n").eq(1)
         self.submodules.remote_ttl_channels = RemoteTTLChannels(
             clock_pads=platform.request("sgmii_clock"),
             tx_pads=platform.request("sfp_tx"),
