@@ -33,3 +33,8 @@ If you are using the OpenOCD Conda package:
 1. locate the OpenOCD scripts directory with:
    ``python3 -c "import artiq.frontend.artiq_flash as af; print(af.scripts_path)"``
 2. add ``-s <scripts directory>`` to the OpenOCD command line.
+
+License
+-------
+
+Copyright (C) 2016 M-Labs Limited. Licensed under GNU GPL version 3, except ``gtx.py`` and ``gtx_init.py`` which are under 2-clause BSD to discourage the use of the Xilinx transceiver "wizards".
