@@ -39,7 +39,7 @@ Run the following OpenOCD commands to flash the ARTIQ transmitter design: ::
 
 The proxy bitstream ``bscan_spi_xc7k325t.bit`` can be found at https://github.com/jordens/bscan_spi_bitstreams or in any ARTIQ conda package for the KC705. See the source code of ``artiq_flash.py`` from ARTIQ for more details.
 
-Refer to the ARTIQ documentation to configure an IP address and other settings for the transmitter device. If the board was previously running stock ARTIQ before, the settings will be kept.
+Refer to the ARTIQ documentation to configure an IP address and other settings for the transmitter device. If the board was running stock ARTIQ before, the settings will be kept.
 
 Build the receiver design by running ``demo_artiq_ttl_rx.py``. The bitstream is stand-alone and the design can be run by simply loading it into the FPGA's volatile memory.
 
