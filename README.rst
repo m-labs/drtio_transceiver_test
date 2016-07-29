@@ -21,6 +21,34 @@ Build the designs by running ``demo_prbs.py``. The transmitter outputs a pseudo-
 
 Due to the use of a self-synchronizing V.34-style PRBS checker and of 8b10b encoding, a single bit error on the fiber may cause multiple bit errors to be reported.
 
+ARTIQ remote TTL demonstration
+------------------------------
+
+Build the transmitter design by running ``demo_artiq_ttl_tx.py``. This design is a complete ARTIQ system which includes the system-on-chip bitstream, BIOS and runtime. It contains local RTIO TTL output channels and remote RTIO TTL output channels whose value is transmitted over the fiber to toggle TTLs on the receiving device. The file ``device_db.pyon`` that comes with this demonstration contains the RTIO channel mappings.
+
+Run the following OpenOCD commands to flash the ARTIQ transmitter design: ::
+
+    ftdi_serial 123456789012
+    init
+    jtagspi_init 0 bscan_spi_xc7k325t.bit
+    jtagspi_program misoc_artiqttltx_kc705/gateware/top.bin 0x000000
+    jtagspi_program misoc_artiqttltx_kc705/software/bios/bios.bin 0xaf0000
+    jtagspi_program misoc_artiqttltx_kc705/software/bios/runtime.fbi 0xb00000
+    xc7_program xc7.tap
+    exit
+
+The proxy bitstream ``bscan_spi_xc7k325t.bit`` can be found at https://github.com/jordens/bscan_spi_bitstreams or in any ARTIQ conda package for the KC705. See the source code of ``artiq_flash.py`` from ARTIQ for more details.
+
+Refer to the ARTIQ documentation to configure an IP address and other settings for the transmitter device. If the board was previously running stock ARTIQ before, the settings will be kept.
+
+Build the receiver design by running ``demo_artiq_ttl_rx.py``. The bitstream is stand-alone and the design can be run by simply loading it into the FPGA's volatile memory.
+
+Once you have the two devices running, you can perform the following:
+* run ``artiq_run line.py`` for an example that blinks LEDs simultaneously on both devices.
+* use TTL monitoring/injection in the ARTIQ dashboard.
+* implement your own kernels. Due to the extremely simplified DRTIO protocol used in this demonstration, all delays must be multiples of 48ns. This restriction also applies to TTL pulse durations.
+* verify clock stability. The transmitter outputs its 62.5MHz transceiver clock on USER_SMA_CLOCK_P. The receiver outputs the 62.5MHz raw recovered clock on USER_SMA_CLOCK_P, and the same clock after it has been jitter-filtered by the Si5324 on USER_SMA_CLOCK_N. The phase relationship between the transmitter and receiver clocks must be constant.
+
 Managing multiple KC705 boards with OpenOCD
 -------------------------------------------
 
