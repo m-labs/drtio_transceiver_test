@@ -44,6 +44,7 @@ Refer to the ARTIQ documentation to configure an IP address and other settings f
 Build the receiver design by running ``demo_artiq_ttl_rx.py``. The bitstream is stand-alone and the design can be run by simply loading it into the FPGA's volatile memory.
 
 Once you have the two devices running, you can perform the following:
+
 * run ``artiq_run line.py`` for an example that blinks LEDs simultaneously on both devices.
 * use TTL monitoring/injection in the ARTIQ dashboard.
 * implement your own kernels. Due to the extremely simplified DRTIO protocol used in this demonstration, all delays must be multiples of 48ns. This restriction also applies to TTL pulse durations.
