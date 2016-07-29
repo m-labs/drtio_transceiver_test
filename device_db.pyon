@@ -1,3 +1,10 @@
+# TTL named ``ttlX`` and ``remote_ttlX`` control the FMC LPC pins of respectively
+# the transmitter and receiver, as follows:
+# ttl0->LA00_P, ttl1->LA00_N, ttl2->LA01_P, ttl3->LA01_N, etc.
+# The XM105 adapter board can be used to provide easy access to those signals.
+#
+# Other device names should be self-explanatory.
+
 {
     "comm": {
         "type": "local",
