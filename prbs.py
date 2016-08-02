@@ -28,7 +28,6 @@ class PRBSChecker(Module):
     def __init__(self, n_in, n_state=23, taps=[17, 22]):
         self.i = Signal(n_in)
         self.errors = Signal(n_in)
-        self.error_count = Signal(max=n_in+1)
 
         # # #
 
@@ -41,5 +40,3 @@ class PRBSChecker(Module):
             curval.pop()
 
         self.sync += state.eq(Cat(*curval[:n_state]))
-        self.comb += self.error_count.eq(
-            reduce(add, [self.errors[i] for i in range(n_in)]))
