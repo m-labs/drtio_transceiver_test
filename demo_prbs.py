@@ -8,9 +8,13 @@ from migen import *
 from migen.genlib.cdc import GrayCounter, NoRetiming, MultiReg, GrayDecoder
 from migen.build.platforms import kc705
 from misoc.cores.uart import RS232PHY
+from misoc.interconnect import wishbone
 
 from gtx import GTXTransmitter, GTXReceiver
 from prbs import PRBSGenerator, PRBSChecker
+from i2c import *
+from sequencer import Sequencer
+from si5324_kc705 import get_i2c_program
 from wishbonebridge import WishboneStreamingBridge
 from comm_uart import CommUART
 
@@ -64,14 +68,16 @@ class PRBSRX(Module):
         self.specials += Instance("IBUFGDS",
             i_I=sys_clock_pads.p, i_IB=sys_clock_pads.n,
             o_O=self.cd_sys.clk)
+        sys_clk_freq = 156000000
         self.comb += platform.request("sfp_tx_disable_n").eq(1)
 
         gtx = GTXReceiver(
             clock_pads=platform.request("sgmii_clock"),
             rx_pads=platform.request("sfp_rx"),
-            sys_clk_freq=156000000)
+            sys_clk_freq=sys_clk_freq)
         self.submodules += gtx
 
+        # PRBS checker
         checker = ClockDomainsRenamer("rx")(CEInserter()(PRBSChecker(16)))
         self.submodules += checker
 
@@ -93,13 +99,35 @@ class PRBSRX(Module):
             MultiReg(error_accumulator.q, error_decoder.i)
         ]
 
-        uart_phy = RS232PHY(platform.request("serial"), 156000000, 115200)
-        bridge = WishboneStreamingBridge(uart_phy, 156000000)
-        self.submodules += uart_phy, bridge
-        self.comb += [
-            bridge.wishbone.ack.eq(bridge.wishbone.cyc & bridge.wishbone.stb),
-            bridge.wishbone.dat_r.eq(error_decoder.o)
+        # Wishbone target - I2C
+        i2c_master = I2CMaster(platform.request("i2c"))
+        self.submodules += i2c_master
+
+        # Wishbone target - PRBS error count
+        checker_wb = wishbone.Interface()
+        self.sync += [
+            checker_wb.dat_r.eq(error_decoder.o),
+            checker_wb.ack.eq(0),
+            If(checker_wb.cyc & checker_wb.stb & ~checker_wb.ack,
+                checker_wb.ack.eq(1))
         ]
+
+        # Wishbone master - Sequencer
+        sequencer = Sequencer(get_i2c_program(sys_clk_freq))
+        self.submodules += sequencer
+
+        # Wishbone master - UART bridge
+        uart_phy = RS232PHY(platform.request("serial"), sys_clk_freq, 115200)
+        bridge = WishboneStreamingBridge(uart_phy, sys_clk_freq)
+        self.submodules += uart_phy, bridge
+
+        # Wishbone interconnect
+        interconnect = wishbone.InterconnectShared(
+            [sequencer.bus, bridge.wishbone],
+            [(lambda a: a[4] == 0, i2c_master.bus),
+             (lambda a: a[4] == 1, checker_wb)],
+            register=True)
+        self.submodules += interconnect
 
 
 def build_tx():
@@ -116,7 +144,7 @@ def build_rx():
 
 def readout(port):
     with CommUART(port) as comm:
-        print(comm.read(0))
+        print(comm.read(0x40))
 
 
 def main():
