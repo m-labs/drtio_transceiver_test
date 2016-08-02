@@ -25,7 +25,10 @@ def prbs_check(dw, seq):
         for w in seq:
             yield dut.i.eq(w)
             yield
-            error_count += (yield dut.error_count)
+            errors = yield dut.errors
+            for i in range(len(dut.errors)):
+                if errors & (1 << i):
+                    error_count += 1
     run_simulation(dut, pump())
     return error_count
 
@@ -44,5 +47,6 @@ class TestPRBS(unittest.TestCase):
         err_sequence = list(self.sequence)
         err_sequence[42] ^= 0x0100
         detected_error_count = prbs_check(self.dw, err_sequence)
+        print(detected_error_count)
         self.assertGreater(detected_error_count, 0)
         self.assertLess(detected_error_count, 23)
