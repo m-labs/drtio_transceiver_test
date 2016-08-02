@@ -14,7 +14,7 @@ from gtx import GTXTransmitter, GTXReceiver
 from prbs import PRBSGenerator, PRBSChecker
 from i2c import *
 from sequencer import Sequencer
-from si5324_kc705 import get_i2c_program
+from si5324_kc705 import get_i2c_program, Si5324ClockRouter
 from wishbonebridge import WishboneStreamingBridge
 from comm_uart import CommUART
 
@@ -78,7 +78,7 @@ class PRBSRX(Module):
         self.submodules += gtx
 
         # PRBS checker
-        checker = ClockDomainsRenamer("rx")(CEInserter()(PRBSChecker(16)))
+        checker = ClockDomainsRenamer("rx_clean")(CEInserter()(PRBSChecker(16)))
         self.submodules += checker
 
         self.sync.rx += [
@@ -87,7 +87,7 @@ class PRBSRX(Module):
             checker.i[8:].eq(gtx.decoders[1].d)
         ]
 
-        error_accumulator = ClockDomainsRenamer("rx")(GrayCounter(32))
+        error_accumulator = ClockDomainsRenamer("rx_clean")(GrayCounter(32))
         self.submodules += error_accumulator
         error_bits = [checker.errors[i] for i in range(len(checker.errors))]
         self.comb += error_accumulator.ce.eq(reduce(or_, error_bits))
@@ -129,6 +129,8 @@ class PRBSRX(Module):
             register=True)
         self.submodules += interconnect
 
+        si5324_clock_router = Si5324ClockRouter(platform, sys_clk_freq)
+        self.submodules += si5324_clock_router
 
 def build_tx():
     platform = kc705.Platform()

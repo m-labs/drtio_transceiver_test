@@ -23,6 +23,8 @@ The error counter is incremented by one when at least one error is detected in a
 
 Due to the use of a self-synchronizing V.34-style PRBS checker and of 8b10b encoding, a single bit error on the fiber may cause multiple bit errors to be detected.
 
+The receiver outputs the 62.5MHz raw recovered clock on USER_SMA_CLOCK_P, and the same clock after it has been jitter-filtered by the Si5324 on USER_SMA_CLOCK_N. The phase relationship between the transmitter and receiver clocks must be constant.
+
 ARTIQ remote TTL demonstration
 ------------------------------
 

@@ -2,6 +2,8 @@
 # Also configures the PCA9548 I2C switch on the KC705 to give access
 # to the Si5324.
 
+from migen import *
+
 from i2c import *
 from sequencer import *
 
@@ -60,3 +62,44 @@ def get_i2c_program(sys_clk_freq):
         InstEnd(),
     ]
     return program
+
+
+class Si5324ClockRouter(Module):
+    def __init__(self, platform, sys_clk_freq):
+        # Reset
+        si5324_rst_n = platform.request("si5324").rst_n
+        reset_val = int(sys_clk_freq/20e3)
+        reset_ctr = Signal(max=reset_val+1, reset=reset_val)
+        self.sync += \
+            If(reset_ctr != 0,
+                reset_ctr.eq(reset_ctr - 1)
+            ).Else(
+                si5324_rst_n.eq(1)
+            )
+
+        # Clock to Si5324
+        si5324_clkin = platform.request("si5324_clkin")
+        self.specials += \
+            Instance("OBUFDS",
+                i_I=ClockSignal("rx"),
+                o_O=si5324_clkin.p, o_OB=si5324_clkin.n
+            )
+
+        # Clock from Si5324
+        si5324_clkout = platform.request("si5324_clkout")
+        rx_clean_unbuffered = Signal()
+        self.clock_domains.cd_rx_clean = ClockDomain(reset_less=True)
+        self.specials += [
+            Instance("IBUFDS_GTE2",
+                     i_I=si5324_clkout.p, i_IB=si5324_clkout.n,
+                     o_O=rx_clean_unbuffered),
+            Instance("BUFG",
+                     i_I=rx_clean_unbuffered,
+                     o_O=self.cd_rx_clean.clk),
+        ]
+
+        # Debug SMAs
+        sma = platform.request("user_sma_clock_p")
+        self.comb += sma.eq(ClockSignal("rx"))
+        sma = platform.request("user_sma_clock_n")
+        self.comb += sma.eq(ClockSignal("rx_clean"))
