@@ -147,6 +147,20 @@ def readout(port):
         print(comm.read(0x40))
 
 
+def set_pll_phase(port, phase):
+    with CommUART(port) as comm:
+        comm.write(0x00, I2C_START)
+        while not (comm.read(0x00) & I2C_IDLE):
+            pass
+        for octet in [(0x68 << 1), 142, phase]:
+            comm.write(0x00, I2C_WRITE | octet)
+            while not (comm.read(0x00) & I2C_IDLE):
+                pass
+        comm.write(0x00, I2C_STOP)
+        while not (comm.read(0x00) & I2C_IDLE):
+            pass
+
+
 def main():
     parser = argparse.ArgumentParser(description="PRBS demo")
     parser.add_argument("--no-tx", default=False, action="store_true",
@@ -158,10 +172,15 @@ def main():
                         help="read out error counter value from the board "
                              "on the specified serial device. Disables all "
                              "bitstream builds.")
+    parser.add_argument("--set-pll-phase", nargs=2,
+                        metavar=("SERIAL_PORT", "PHASE"),
+                        default=None, type=str)
     args = parser.parse_args()
     if args.readout is not None:
         readout(args.readout)
-    else:
+    if args.set_pll_phase is not None:
+        set_pll_phase(args.set_pll_phase[0], int(args.set_pll_phase[1]))
+    if args.readout is None and args.set_pll_phase is None:
         if not args.no_tx:
             build_tx()
         if not args.no_rx:
