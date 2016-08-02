@@ -6,7 +6,9 @@ from misoc.cores.uart import RS232PHY
 
 from gtx import GTXReceiver
 from ttl_xm105 import ttl_extension
-from wishbonebridge import WishboneStreamingBridge
+from sequencer import Sequencer
+from i2c import I2CMaster
+from si5324_kc705 import get_i2c_program, Si5324ClockRouter
 
 
 class ARTIQTTLRX(Module):
@@ -18,21 +20,27 @@ class ARTIQTTLRX(Module):
         self.specials += Instance("IBUFGDS",
             i_I=sys_clock_pads.p, i_IB=sys_clock_pads.n,
             o_O=self.cd_sys.clk)
+        sys_clk_freq = 156000000
         self.comb += platform.request("sfp_tx_disable_n").eq(1)
 
         gtx = GTXReceiver(
             clock_pads=platform.request("sgmii_clock"),
             rx_pads=platform.request("sfp_rx"),
-            sys_clk_freq=156000000)
+            sys_clk_freq=sys_clk_freq)
         self.submodules += gtx
 
-        sma = platform.request("user_sma_clock_p")
-        self.comb += sma.eq(ClockSignal("rx"))
+        # clean up GTX clock using Si5324
+        i2c_master = I2CMaster(platform.request("i2c"))
+        sequencer = Sequencer(get_i2c_program(sys_clk_freq))
+        si5324_clock_router = Si5324ClockRouter(platform, sys_clk_freq)
+        self.submodules += i2c_master, sequencer, si5324_clock_router
+        self.comb += sequencer.bus.connect(i2c_master.bus)
 
+        # decode frames
         back_buffer = Signal(32)
         front_buffer = Signal(32)
         frame_hi = Signal()
-        self.sync.rx += [
+        self.sync.rx_clean += [
             If(gtx.decoders[0].k,
                 front_buffer.eq(back_buffer),
                 frame_hi.eq(0)
@@ -48,6 +56,7 @@ class ARTIQTTLRX(Module):
             )
         ]
 
+        # drive TTLs
         self.comb += [
             platform.request("user_sma_gpio_p").eq(front_buffer[0]),
             platform.request("user_sma_gpio_n").eq(front_buffer[1])
