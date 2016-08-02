@@ -1,8 +1,11 @@
 #!/usr/bin/env python3.5
 
 import argparse
+from operator import or_
+from functools import reduce
 
 from migen import *
+from migen.genlib.cdc import GrayCounter, NoRetiming, MultiReg, GrayDecoder
 from migen.build.platforms import kc705
 from misoc.cores.uart import RS232PHY
 
@@ -78,18 +81,24 @@ class PRBSRX(Module):
             checker.i[8:].eq(gtx.decoders[1].d)
         ]
 
-        error_accumulator = Signal(32)
-        self.sync.rx += error_accumulator.eq(
-            error_accumulator + checker.error_count)
+        error_accumulator = ClockDomainsRenamer("rx")(GrayCounter(32))
+        self.submodules += error_accumulator
+        error_bits = [checker.errors[i] for i in range(len(checker.errors))]
+        self.comb += error_accumulator.ce.eq(reduce(or_, error_bits))
 
-        uart_phy = ClockDomainsRenamer("rx")(
-            RS232PHY(platform.request("serial"), 62500000, 115200))
-        bridge = ClockDomainsRenamer("rx")(
-            WishboneStreamingBridge(uart_phy, 62500000))
+        error_decoder = GrayDecoder(32)
+        self.submodules += error_decoder
+        self.specials += [
+            NoRetiming(error_accumulator.q),
+            MultiReg(error_accumulator.q, error_decoder.i)
+        ]
+
+        uart_phy = RS232PHY(platform.request("serial"), 156000000, 115200)
+        bridge = WishboneStreamingBridge(uart_phy, 156000000)
         self.submodules += uart_phy, bridge
         self.comb += [
             bridge.wishbone.ack.eq(bridge.wishbone.cyc & bridge.wishbone.stb),
-            bridge.wishbone.dat_r.eq(error_accumulator)
+            bridge.wishbone.dat_r.eq(error_decoder.o)
         ]
 
 
