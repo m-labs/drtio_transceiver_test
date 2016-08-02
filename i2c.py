@@ -118,6 +118,7 @@ class I2CMasterMachine(Module):
 
         fsm.act("READ0",
             NextValue(self.scl_o, 0),
+            NextValue(self.sda_o, 1),
             NextState("READ1"),
         )
         fsm.act("READ1",
@@ -133,7 +134,7 @@ class I2CMasterMachine(Module):
         )
         fsm.act("READ2",
             NextValue(self.scl_o, 1),
-            NextValue(self.data[:-1], self.data[1:]),
+            NextValue(self.data[1:], self.data[:-1]),
             NextValue(bits, bits - 1),
             NextState("READ1"),
         )
@@ -223,8 +224,6 @@ class I2CMaster(Module):
             i2c.sda_i.eq(self.sda_t.i),
         ]
 
-# Testbench
-
 I2C_XFER_ADDR, I2C_CONFIG_ADDR = range(2)
 (
     I2C_ACK,
@@ -234,59 +233,3 @@ I2C_XFER_ADDR, I2C_CONFIG_ADDR = range(2)
     I2C_STOP,
     I2C_IDLE,
 ) = (1 << i for i in range(8, 14))
-
-
-def I2C_DIV_WRITE(i):
-    return i
-
-
-def _test_read(bus):
-    while not ((yield from bus.read(I2C_XFER_ADDR)) & I2C_IDLE):
-        pass
-    return (yield from bus.read(I2C_XFER_ADDR))
-
-def _test_gen(bus):
-    yield from bus.write(I2C_CONFIG_ADDR, I2C_DIV_WRITE(4))
-    yield from bus.write(I2C_XFER_ADDR, I2C_START)
-    yield from _test_read(bus)
-    yield from bus.write(I2C_XFER_ADDR, I2C_WRITE | 0x40)
-    yield from _test_read(bus)
-    yield from bus.write(I2C_XFER_ADDR, I2C_WRITE | 0x05)
-    yield from _test_read(bus)
-    yield from bus.write(I2C_XFER_ADDR, I2C_STOP | I2C_START)
-    yield from _test_read(bus)
-    yield from bus.write(I2C_XFER_ADDR, I2C_WRITE | 0x81)
-    yield from _test_read(bus)
-    yield from bus.write(I2C_XFER_ADDR, I2C_READ | I2C_ACK)
-    yield from _test_read(bus)
-    yield from bus.write(I2C_XFER_ADDR, I2C_READ)
-    yield from _test_read(bus)
-    yield from bus.write(I2C_XFER_ADDR, I2C_STOP)
-    yield from _test_read(bus)
-
-
-class _TestPads:
-    def __init__(self):
-        self.scl = Signal()
-        self.sda = Signal()
-
-
-class _TestTristate(Module):
-    def __init__(self, t):
-        oe = Signal()
-        self.comb += [
-            t.target.eq(t.o),
-            oe.eq(t.oe),
-            t.i.eq(t.o),
-        ]
-
-
-if __name__ == "__main__":
-    from migen.fhdl.specials import Tristate
-
-    pads = _TestPads()
-    dut = I2CMaster(pads)
-
-    Tristate.lower = _TestTristate
-    run_simulation(dut, _test_gen(dut.bus), vcd_name="i2c_master.vcd")
-
