@@ -2,6 +2,7 @@
 # Also configures the PCA9548 I2C switch on the KC705 to give access
 # to the Si5324.
 
+from i2c import *
 from sequencer import *
 
 
