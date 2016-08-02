@@ -176,32 +176,35 @@ class I2CMaster(Module):
             clock_width=20)
 
         self.sync += [
+            # read
+            If(bus.adr[0],
+                bus.dat_r.eq(i2c.cg.load),
+            ).Else(
+                bus.dat_r.eq(Cat(i2c.data, i2c.ack, C(0, 4), i2c.idle)),
+            ),
+
+            # write
+            i2c.read.eq(0),
+            i2c.write.eq(0),
+            i2c.start.eq(0),
+            i2c.stop.eq(0),
+
             bus.ack.eq(0),
             If(bus.cyc & bus.stb & ~bus.ack,
                 bus.ack.eq(1),
-            ),
-            If(bus.adr == 0,
-                bus.dat_r.eq(Cat(i2c.data, i2c.ack, C(0, 4), i2c.idle)),
-            ),
-            If(bus.adr == 1,
-                bus.dat_r.eq(i2c.cg.load),
-            ),
-            If(bus.ack & bus.we & (bus.adr == 0),
-                i2c.data.eq(bus.dat_w[0:8]),
-                i2c.ack.eq(bus.dat_w[8]),
-                i2c.read.eq(bus.dat_w[9]),
-                i2c.write.eq(bus.dat_w[10]),
-                i2c.start.eq(bus.dat_w[11]),
-                i2c.stop.eq(bus.dat_w[12]),
-            ).Else(
-                i2c.read.eq(0),
-                i2c.write.eq(0),
-                i2c.start.eq(0),
-                i2c.stop.eq(0),
-            ),
-            If(bus.ack & bus.we & (bus.adr == 1),
-                i2c.cg.load.eq(bus.dat_w),
-            ),
+                If(bus.we,
+                    If(bus.adr[0],
+                        i2c.cg.load.eq(bus.dat_w),
+                    ).Else(
+                        i2c.data.eq(bus.dat_w[0:8]),
+                        i2c.ack.eq(bus.dat_w[8]),
+                        i2c.read.eq(bus.dat_w[9]),
+                        i2c.write.eq(bus.dat_w[10]),
+                        i2c.start.eq(bus.dat_w[11]),
+                        i2c.stop.eq(bus.dat_w[12]),
+                    )
+                )
+            )
         ]
 
         # I/O
