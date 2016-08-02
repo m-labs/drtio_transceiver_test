@@ -2,22 +2,19 @@ import unittest
 
 from migen import *
 
-from csr_initializer import *
+from sequencer import *
 
 
-class TestCSRInitializer(unittest.TestCase):
-    def test_csr_initializer(self):
+class TestSequencer(unittest.TestCase):
+    def test_sequencer(self):
         program = [
-            InstWrite(6, 0x3e),
-            InstWrite(5, 0x10),
-            InstReadUntil0(4, 0x03),
-            InstWrite(1, 0x76),
-            InstReadUntil1(1, 7),
-            InstReadUntil0(12, 0),
-            InstWrite(3, 0x24),
+            InstWrite(0, 0xaa),
+            InstWrite(1, 0x55),
+            InstWait(0, 0x01),
+            InstWait(0, 0x10),
             InstEnd()
         ]
-        dut = CSRInitializer(program)
+        dut = Sequencer(program)
 
         def wait():
             timeout = 0
@@ -39,20 +36,16 @@ class TestCSRInitializer(unittest.TestCase):
             yield
 
         def check():
-            for inst in program:
+            for inst_ip, inst in enumerate(program):
                 if isinstance(inst, InstWrite):
                     we, a, d = yield from wait()
                     self.assertTrue(we)
                     self.assertEqual(a, inst.address)
                     self.assertEqual(d, inst.data)
                     yield from ack()
-                elif isinstance(inst, (InstReadUntil0, InstReadUntil1)):
-                    pos_val = 1 << inst.bsel
-                    if isinstance(inst, InstReadUntil0):
-                        pos_val = ~pos_val & 0xff
-                        neg_val = 0xff
-                    else:
-                        neg_val = 0x00
+                elif isinstance(inst, InstWait):
+                    pos_val = inst.mask
+                    neg_val = 0x00
                     for _ in range(3):
                         we, a, d = yield from wait()
                         self.assertFalse(we)
