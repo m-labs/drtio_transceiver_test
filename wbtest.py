@@ -17,7 +17,7 @@ class WBTest(Module):
         self.submodules.phy = RS232PHY(platform.request("serial"), 156000000, 115200)
         self.submodules.bridge = wishbonebridge.WishboneStreamingBridge(self.phy, 156000000)
         self.comb += [
-            self.bridge.wishbone.ack.eq(self.bridge.wishbone.stb),
+            self.bridge.wishbone.ack.eq(self.bridge.wishbone.cyc & self.bridge.wishbone.stb),
             self.bridge.wishbone.dat_r.eq(0xdeadbeef)
         ]
 
