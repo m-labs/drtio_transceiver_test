@@ -37,7 +37,7 @@ Run the following OpenOCD commands to flash the ARTIQ transmitter design: ::
     jtagspi_init 0 bscan_spi_xc7k325t.bit
     jtagspi_program misoc_artiqttltx_kc705/gateware/top.bin 0x000000
     jtagspi_program misoc_artiqttltx_kc705/software/bios/bios.bin 0xaf0000
-    jtagspi_program misoc_artiqttltx_kc705/software/bios/runtime.fbi 0xb00000
+    jtagspi_program misoc_artiqttltx_kc705/software/runtime/runtime.fbi 0xb00000
     xc7_program xc7.tap
     exit
 
