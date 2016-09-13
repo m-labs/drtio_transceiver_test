@@ -195,10 +195,10 @@ class SingleEncoder(Module):
         output_4b = Signal(4)
         self.comb += [
             If(~disp_inter & alt7_rd0,
-                self.disp_out.eq(~self.disp_in),
+                self.disp_out.eq(~disp_inter),
                 output_4b.eq(0b0111)
             ).Elif(disp_inter & alt7_rd1,
-                self.disp_out.eq(~self.disp_in),
+                self.disp_out.eq(~disp_inter),
                 output_4b.eq(0b1000)
             ).Else(
                 self.disp_out.eq(disp_inter ^ code4b_unbalanced),
