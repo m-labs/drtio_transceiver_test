@@ -5,7 +5,7 @@ This repository contains several test and proof-of-concept designs for data and 
 
 Communications are between two KC705 boards connected over SFP at 1.25Gbps line rate. Use 1310/1490nm SFPs with a single G.652 fiber (same as White Rabbit - http://www.ohwr.org/projects/white-rabbit/wiki/SFP).
 
-Requires PySerial, Migen 0.4+, MiSoC, and ARTIQ 2.0+.
+Requires PySerial, Migen 0.4, MiSoC 0.3, and ARTIQ 2.0.
 
 This work was supported by the Army Research Lab.
 
